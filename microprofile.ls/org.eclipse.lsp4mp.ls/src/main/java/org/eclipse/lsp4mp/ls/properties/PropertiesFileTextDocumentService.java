@@ -39,6 +39,8 @@ import org.eclipse.lsp4j.DocumentHighlightParams;
 import org.eclipse.lsp4j.DocumentRangeFormattingParams;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
+import org.eclipse.lsp4j.FoldingRange;
+import org.eclipse.lsp4j.FoldingRangeRequestParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
@@ -230,6 +232,13 @@ public class PropertiesFileTextDocumentService extends AbstractTextDocumentServi
 	public CompletableFuture<List<? extends DocumentHighlight>> documentHighlight(DocumentHighlightParams params) {
 		return getPropertiesModel(params.getTextDocument(), (cancelChecker, document) -> {
 			return getPropertiesFileLanguageService().findDocumentHighlight(document, params.getPosition());
+		});
+	}
+
+	@Override
+	public CompletableFuture<List<FoldingRange>> foldingRange(FoldingRangeRequestParams params) {
+		return getPropertiesModel(params.getTextDocument(), (cancelChecker, document) -> {
+			return getPropertiesFileLanguageService().findFoldingRanges(document);
 		});
 	}
 

@@ -38,6 +38,8 @@ import org.eclipse.lsp4j.DocumentHighlightParams;
 import org.eclipse.lsp4j.DocumentRangeFormattingParams;
 import org.eclipse.lsp4j.DocumentSymbol;
 import org.eclipse.lsp4j.DocumentSymbolParams;
+import org.eclipse.lsp4j.FoldingRange;
+import org.eclipse.lsp4j.FoldingRangeRequestParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
@@ -214,6 +216,15 @@ public class MicroProfileTextDocumentService implements TextDocumentService {
 		TextDocumentService service = getTextDocumentService(params.getTextDocument());
 		if (service != null) {
 			return service.documentHighlight(params);
+		}
+		return CompletableFuture.completedFuture(null);
+	}
+
+	@Override
+	public CompletableFuture<List<FoldingRange>> foldingRange(FoldingRangeRequestParams params) {
+		TextDocumentService service = getTextDocumentService(params.getTextDocument());
+		if (service != null) {
+			return service.foldingRange(params);
 		}
 		return CompletableFuture.completedFuture(null);
 	}

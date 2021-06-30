@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.CodeActionContext;
 import org.eclipse.lsp4j.Command;
@@ -69,9 +72,6 @@ import org.eclipse.lsp4mp.snippets.SnippetContextForProperties;
 import org.eclipse.lsp4mp.utils.DocumentationUtils;
 import org.eclipse.lsp4mp.utils.PositionUtils;
 import org.junit.Assert;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 /**
  * The properties file assert
@@ -703,6 +703,10 @@ public class PropertiesFileAssert {
 
 		Assert.assertArrayEquals(expected, actual);
 	}
+
+	// ------------------ Folding Range Assert
+
+	// TODO: implement
 
 	private static PropertiesModel parse(String text, String uri) {
 		TextDocument document = new TextDocument(text, uri != null ? uri : "application.properties");

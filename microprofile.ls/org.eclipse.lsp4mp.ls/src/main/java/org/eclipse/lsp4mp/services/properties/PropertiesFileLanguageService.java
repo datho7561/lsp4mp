@@ -23,6 +23,7 @@ import org.eclipse.lsp4j.CompletionList;
 import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DocumentHighlight;
 import org.eclipse.lsp4j.DocumentSymbol;
+import org.eclipse.lsp4j.FoldingRange;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
@@ -58,6 +59,7 @@ public class PropertiesFileLanguageService {
 	private final PropertiesFileFormatter formatter;
 	private final PropertiesFileCodeActions codeActions;
 	private final PropertiesFileDocumentHighlight documentHighlight;
+	private final PropertiesFileFoldingRanges foldingRanges;
 
 	public PropertiesFileLanguageService() {
 		this.completions = new PropertiesFileCompletions();
@@ -68,6 +70,7 @@ public class PropertiesFileLanguageService {
 		this.formatter = new PropertiesFileFormatter();
 		this.codeActions = new PropertiesFileCodeActions();
 		this.documentHighlight = new PropertiesFileDocumentHighlight();
+		this.foldingRanges = new PropertiesFileFoldingRanges();
 	}
 
 	/**
@@ -156,6 +159,10 @@ public class PropertiesFileLanguageService {
 				return new Location(link.getTargetUri(), link.getTargetRange());
 			}).collect(Collectors.toList()));
 		});
+	}
+
+	public List<FoldingRange> findFoldingRanges(PropertiesModel document) {
+		return foldingRanges.findFoldingRanges(document);
 	}
 
 	/**

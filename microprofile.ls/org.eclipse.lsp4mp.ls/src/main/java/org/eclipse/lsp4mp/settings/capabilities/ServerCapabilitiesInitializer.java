@@ -46,10 +46,13 @@ public class ServerCapabilitiesInitializer {
 			serverCapabilities.setCompletionProvider(DEFAULT_COMPLETION_OPTIONS);
 		}
 		serverCapabilities
-				.setDocumentSymbolProvider(!clientCapabilities.isDocumentSymbolDynamicRegistrationSupported());
+		.setDocumentSymbolProvider(!clientCapabilities.isDocumentSymbolDynamicRegistrationSupported());
 		serverCapabilities.setDefinitionProvider(!clientCapabilities.isDefinitionDynamicRegistered());
 		if (!clientCapabilities.isCodeLensDynamicRegistered()) {
 			serverCapabilities.setCodeLensProvider(DEFAULT_CODELENS_OPTIONS);
+		}
+		if (!clientCapabilities.isFoldingRangeDynamicRegistered()) {
+			serverCapabilities.setFoldingRangeProvider(true);
 		}
 		return serverCapabilities;
 	}

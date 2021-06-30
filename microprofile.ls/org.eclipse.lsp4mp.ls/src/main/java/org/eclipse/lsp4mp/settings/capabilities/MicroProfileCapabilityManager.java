@@ -20,6 +20,7 @@ import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstan
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.DEFINITION_ID;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_HIGHLIGHT_ID;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.DOCUMENT_SYMBOL_ID;
+import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.FOLDING_RANGE_ID;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.FORMATTING_ID;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.HOVER_ID;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.RANGE_FORMATTING_ID;
@@ -29,6 +30,7 @@ import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstan
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DEFINITION;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DOCUMENT_HIGHLIGHT;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_DOCUMENT_SYMBOL;
+import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_FOLDING_RANGE;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_FORMATTING;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_HOVER;
 import static org.eclipse.lsp4mp.settings.capabilities.ServerCapabilitiesConstants.TEXT_DOCUMENT_RANGE_FORMATTING;
@@ -112,6 +114,9 @@ public class MicroProfileCapabilityManager {
 		}
 		if (this.getClientCapabilities().isDocumentHighlightSupported()) {
 			registerCapability(DOCUMENT_HIGHLIGHT_ID, TEXT_DOCUMENT_DOCUMENT_HIGHLIGHT, getFormattingRegistrationOptions());
+		}
+		if (this.getClientCapabilities().isFoldingRangeDynamicRegistered()) {
+			registerCapability(FOLDING_RANGE_ID, TEXT_DOCUMENT_FOLDING_RANGE);
 		}
 	}
 

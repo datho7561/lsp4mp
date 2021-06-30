@@ -37,6 +37,8 @@ import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
+import org.eclipse.lsp4j.FoldingRange;
+import org.eclipse.lsp4j.FoldingRangeRequestParams;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.HoverParams;
 import org.eclipse.lsp4j.Location;
@@ -67,8 +69,8 @@ import org.eclipse.lsp4mp.model.Property;
 import org.eclipse.lsp4mp.settings.MicroProfileCodeLensSettings;
 import org.eclipse.lsp4mp.settings.SharedSettings;
 import org.eclipse.lsp4mp.snippets.SnippetContextForJava;
-import org.eclipse.lsp4mp.utils.PropertiesFileUtils;
 import org.eclipse.lsp4mp.utils.PositionUtils;
+import org.eclipse.lsp4mp.utils.PropertiesFileUtils;
 
 /**
  * LSP text document service for Java file.
@@ -286,6 +288,13 @@ public class JavaFileTextDocumentService extends AbstractTextDocumentService {
 			triggerValidationFor(Arrays.asList(uri));
 			return null;
 		}, null);
+	}
+
+	// ------------------------------- Folding ---------------------------------
+
+	@Override
+	public CompletableFuture<List<FoldingRange>> foldingRange(FoldingRangeRequestParams params) {
+		return CompletableFuture.completedFuture(Collections.emptyList());
 	}
 
 	/**
