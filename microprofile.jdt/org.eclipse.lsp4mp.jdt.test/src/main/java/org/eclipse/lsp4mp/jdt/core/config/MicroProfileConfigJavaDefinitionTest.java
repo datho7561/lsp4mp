@@ -28,6 +28,8 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4mp.jdt.core.BasePropertiesManagerTest;
 import org.eclipse.lsp4mp.jdt.core.project.JDTMicroProfileProject;
+import org.eclipse.lsp4mp.jdt.internal.core.providers.DefaultMicroProfilePropertiesConfigSourceProvider;
+import org.eclipse.lsp4mp.jdt.internal.core.providers.QuarkusConfigSourceProvider;
 import org.junit.After;
 import org.junit.Test;
 
@@ -42,9 +44,9 @@ public class MicroProfileConfigJavaDefinitionTest extends BasePropertiesManagerT
 
 	@After
 	public void cleanup() throws JavaModelException, IOException {
-		deleteFile(JDTMicroProfileProject.APPLICATION_YAML_FILE, javaProject);
-		deleteFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, javaProject);
-		deleteFile(JDTMicroProfileProject.MICROPROFILE_CONFIG_PROPERTIES_FILE, javaProject);
+		deleteFile(QuarkusConfigSourceProvider.APPLICATION_YAML_FILE, javaProject);
+		deleteFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, javaProject);
+		deleteFile(DefaultMicroProfilePropertiesConfigSourceProvider.MICROPROFILE_CONFIG_PROPERTIES_FILE, javaProject);
 	}
 
 	@Test
@@ -57,7 +59,7 @@ public class MicroProfileConfigJavaDefinitionTest extends BasePropertiesManagerT
 		IFile propertiesFile = project.getFile(new Path("src/main/resources/application.properties"));
 		String propertiesFileUri = fixURI(propertiesFile.getLocation().toFile().toURI());
 
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, //
 				"greeting.message = hello\r\n" + //
 						"greeting.name = quarkus\r\n" + //
 						"greeting.number = 100",

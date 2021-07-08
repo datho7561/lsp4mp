@@ -13,17 +13,14 @@
 *******************************************************************************/
 package org.eclipse.lsp4mp.jdt.core.project;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.lsp4mp.jdt.internal.core.project.IConfigSource;
-import org.eclipse.lsp4mp.jdt.internal.core.project.PropertiesConfigSource;
-import org.eclipse.lsp4mp.jdt.internal.core.project.YamlConfigSource;
-
+import org.eclipse.lsp4mp.jdt.internal.core.ConfigSourceProviderRegistry;
 /**
  * JDT MicroProfile project.
  *
@@ -32,20 +29,10 @@ import org.eclipse.lsp4mp.jdt.internal.core.project.YamlConfigSource;
  */
 public class JDTMicroProfileProject {
 
-	public static final String MICROPROFILE_CONFIG_PROPERTIES_FILE = "META-INF/microprofile-config.properties";
-
-	@Deprecated
-	public static final String APPLICATION_PROPERTIES_FILE = "application.properties";
-	@Deprecated
-	public static final String APPLICATION_YAML_FILE = "application.yaml";
-
-	private final List<IConfigSource> configSources;
+	private IJavaProject javaProject;
 
 	public JDTMicroProfileProject(IJavaProject javaProject) {
-		this.configSources = new ArrayList<IConfigSource>(3);
-		configSources.add(new YamlConfigSource(APPLICATION_YAML_FILE, javaProject));
-		configSources.add(new PropertiesConfigSource(APPLICATION_PROPERTIES_FILE, javaProject));
-		configSources.add(new PropertiesConfigSource(MICROPROFILE_CONFIG_PROPERTIES_FILE, javaProject));
+		this.javaProject = javaProject;
 	}
 
 	/**
@@ -60,7 +47,7 @@ public class JDTMicroProfileProject {
 	 *         defined in this project
 	 */
 	public String getProperty(String propertyKey, String defaultValue) {
-		for (IConfigSource configSource : configSources) {
+		for (IConfigSource configSource : getConfigSources()) {
 			String propertyValue = configSource.getProperty(propertyKey);
 			if (propertyValue != null) {
 				return propertyValue;
@@ -83,7 +70,7 @@ public class JDTMicroProfileProject {
 	}
 
 	public Integer getPropertyAsInteger(String key, Integer defaultValue) {
-		for (IConfigSource configSource : configSources) {
+		for (IConfigSource configSource : getConfigSources()) {
 			Integer property = configSource.getPropertyAsInt(key);
 			if (property != null) {
 				return property;
@@ -108,6 +95,7 @@ public class JDTMicroProfileProject {
 		IConfigSource configSource;
 		// Go backwards so that application.properties replaces
 		// microprofile-config.properties, etc.
+		List<IConfigSource> configSources = getConfigSources();
 		for (int i = configSources.size() - 1; i >= 0; i--) {
 			configSource = configSources.get(i);
 			propertyToInfoMap.putAll(configSource.getPropertyInformations(propertyKey));
@@ -117,6 +105,14 @@ public class JDTMicroProfileProject {
 					return a.getPropertyNameWithProfile().compareTo(b.getPropertyNameWithProfile());
 				}) //
 				.collect(Collectors.toList());
+	}
+
+	private List<IConfigSource> getConfigSources() {
+		TreeSet<IConfigSource> configSourceSet = new TreeSet<>((a, b) -> b.getOrdinal() - a.getOrdinal());
+		for (IConfigSourceProvider provider : ConfigSourceProviderRegistry.getInstance().getProviders()) {
+			configSourceSet.addAll(provider.getConfigSources(javaProject));
+		}
+		return configSourceSet.stream().collect(Collectors.toList());
 	}
 
 }

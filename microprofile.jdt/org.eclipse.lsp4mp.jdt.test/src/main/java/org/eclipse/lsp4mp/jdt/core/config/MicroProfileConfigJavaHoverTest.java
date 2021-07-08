@@ -27,6 +27,8 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4mp.jdt.core.BasePropertiesManagerTest;
 import org.eclipse.lsp4mp.jdt.core.project.JDTMicroProfileProject;
+import org.eclipse.lsp4mp.jdt.internal.core.providers.DefaultMicroProfilePropertiesConfigSourceProvider;
+import org.eclipse.lsp4mp.jdt.internal.core.providers.QuarkusConfigSourceProvider;
 import org.junit.After;
 import org.junit.Test;
 
@@ -41,9 +43,9 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 
 	@After
 	public void cleanup() throws JavaModelException, IOException {
-		deleteFile(JDTMicroProfileProject.APPLICATION_YAML_FILE, javaProject);
-		deleteFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, javaProject);
-		deleteFile(JDTMicroProfileProject.MICROPROFILE_CONFIG_PROPERTIES_FILE, javaProject);
+		deleteFile(QuarkusConfigSourceProvider.APPLICATION_YAML_FILE, javaProject);
+		deleteFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, javaProject);
+		deleteFile(DefaultMicroProfilePropertiesConfigSourceProvider.MICROPROFILE_CONFIG_PROPERTIES_FILE, javaProject);
 	}
 
 	@Test
@@ -56,7 +58,7 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 		IFile propertiesFile = project.getFile(new Path("src/main/resources/application.properties"));
 		String propertiesFileUri = fixURI(propertiesFile.getLocation().toFile().toURI());
 
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, //
 				"greeting.message = hello\r\n" + //
 						"greeting.name = quarkus\r\n" + //
 						"greeting.number = 100",
@@ -116,7 +118,7 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 		IFile propertiesFile = project.getFile(new Path("src/main/resources/application.properties"));
 		String propertiesFileUri = fixURI(propertiesFile.getLocation().toFile().toURI());
 
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, //
 				"greeting.message = hello\r\n" + //
 						"%dev.greeting.message = hello dev\r\n" + //
 						"%prod.greeting.message = hello prod\r\n" + //
@@ -133,7 +135,7 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 						"`greeting.message = hello` *in* [application.properties](" + propertiesFileUri + ")", //
 						14, 28, 44));
 
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, //
 				"%dev.greeting.message = hello dev\r\n" + //
 						"%prod.greeting.message = hello prod\r\n" + //
 						"my.greeting.message\r\n" + //
@@ -162,13 +164,13 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 		IFile propertiesFile = project.getFile(new Path("src/main/resources/application.properties"));
 		String propertiesFileUri = fixURI(propertiesFile.getLocation().toFile().toURI());
 
-		saveFile(JDTMicroProfileProject.APPLICATION_YAML_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_YAML_FILE, //
 				"greeting:\n" + //
 						"  message: message from yaml\n" + //
 						"  number: 2001",
 				javaProject);
 
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, //
 				"greeting.message = hello\r\n" + //
 						"greeting.name = quarkus\r\n" + //
 						"greeting.number = 100",
@@ -184,7 +186,7 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 		assertJavaHover(new Position(26, 33), javaFileUri, JDT_UTILS,
 				h("`greeting.number = 2001` *in* [application.yaml](" + yamlFileUri + ")", 26, 28, 43));
 
-		saveFile(JDTMicroProfileProject.APPLICATION_YAML_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_YAML_FILE, //
 				"greeting:\n" + //
 						"  message: message from yaml",
 				javaProject);
@@ -203,7 +205,7 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 		IFile propertiesFile = project.getFile(new Path("src/main/resources/application.properties"));
 		String propertiesFileUri = fixURI(propertiesFile.getLocation().toFile().toURI());
 
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, "greeting.method.message = hello", javaProject);
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, "greeting.method.message = hello", javaProject);
 
 		// Position(22, 61) is the character after the | symbol:
 		// @ConfigProperty(name = "greeting.m|ethod.message")
@@ -232,7 +234,7 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 		IFile propertiesFile = project.getFile(new Path("src/main/resources/application.properties"));
 		String propertiesFileUri = fixURI(propertiesFile.getLocation().toFile().toURI());
 
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, "greeting.constructor.message = hello",
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, "greeting.constructor.message = hello",
 				javaProject);
 
 		// Position(23, 48) is the character after the | symbol:
@@ -264,13 +266,13 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 		String propertiesFileUri = fixURI(propertiesFile.getLocation().toFile().toURI());
 
 		// microprofile-config.properties exists
-		saveFile(JDTMicroProfileProject.MICROPROFILE_CONFIG_PROPERTIES_FILE, "greeting.constructor.message = hello 1",
+		saveFile(DefaultMicroProfilePropertiesConfigSourceProvider.MICROPROFILE_CONFIG_PROPERTIES_FILE, "greeting.constructor.message = hello 1",
 				javaProject);
 		assertJavaHover(new Position(23, 48), javaFileUri, JDT_UTILS,
 				h("`greeting.constructor.message = hello 1` *in* META-INF/microprofile-config.properties", 23, 36, 64));
 
 		// microprofile-config.properties and application.properties exist
-		saveFile(JDTMicroProfileProject.APPLICATION_PROPERTIES_FILE, "greeting.constructor.message = hello 2",
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_PROPERTIES_FILE, "greeting.constructor.message = hello 2",
 				javaProject);
 		assertJavaHover(new Position(23, 48), javaFileUri, JDT_UTILS,
 				h("`greeting.constructor.message = hello 2` *in* [application.properties](" + propertiesFileUri + ")",
@@ -278,7 +280,7 @@ public class MicroProfileConfigJavaHoverTest extends BasePropertiesManagerTest {
 
 		// microprofile-config.properties, application.properties, and application.yaml
 		// exist
-		saveFile(JDTMicroProfileProject.APPLICATION_YAML_FILE, //
+		saveFile(QuarkusConfigSourceProvider.APPLICATION_YAML_FILE, //
 				"greeting:\n" + //
 						"  constructor:\n" + //
 						"    message: hello 3", //
