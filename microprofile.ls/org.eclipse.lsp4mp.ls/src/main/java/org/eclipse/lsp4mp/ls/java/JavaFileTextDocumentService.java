@@ -71,6 +71,7 @@ import org.eclipse.lsp4mp.model.Property;
 import org.eclipse.lsp4mp.settings.MicroProfileCodeLensSettings;
 import org.eclipse.lsp4mp.settings.MicroProfileValidationSettings;
 import org.eclipse.lsp4mp.settings.SharedSettings;
+import org.eclipse.lsp4mp.snippets.JavaSnippetCompletionContext;
 import org.eclipse.lsp4mp.snippets.SnippetContextForJava;
 import org.eclipse.lsp4mp.utils.PositionUtils;
 import org.eclipse.lsp4mp.utils.PropertiesFileUtils;
@@ -152,24 +153,29 @@ public class JavaFileTextDocumentService extends AbstractTextDocumentService {
 				LOGGER.log(Level.SEVERE, "Error while getting java snippet completions", e);
 				return null;
 			}
+			final Integer finalizedCompletionOffset = completionOffset;
 			boolean canSupportMarkdown = true;
 			boolean snippetsSupported = sharedSettings.getCompletionCapabilities().isCompletionSnippetsSupported();
 			CompletionList list1 = new CompletionList();
 			list1.setItems(new ArrayList<>());
-			documents.getSnippetRegistry().getCompletionItems(document, completionOffset, canSupportMarkdown,
-					snippetsSupported, (context, model) -> {
-						if (context != null && context instanceof SnippetContextForJava) {
-							return ((SnippetContextForJava) context).isMatch(projectInfo);
-						}
-						return true;
-					}, projectInfo) //
-					.forEach(item -> {
-						list1.getItems().add(item);
+
+			CompletableFuture<Void> snippetsFuture = microprofileLanguageServer.getLanguageClient().getJavaCursorContext(javaParams) //
+					.thenAccept((javaCursorContext) -> {
+						documents.getSnippetRegistry().getCompletionItems(document, finalizedCompletionOffset, canSupportMarkdown,
+								snippetsSupported, (context, model) -> {
+									if (context != null && context instanceof SnippetContextForJava) {
+										return ((SnippetContextForJava) context).isMatch(new JavaSnippetCompletionContext(projectInfo, javaCursorContext));
+									}
+									return true;
+								}, projectInfo) //
+								.forEach(item -> {
+									list1.getItems().add(item);
+								});
 					});
 
 			cancelChecker.checkCanceled();
 
-			return javaParticipantCompletionsFuture.thenApply((list2) -> {
+			return javaParticipantCompletionsFuture.thenCombine(snippetsFuture, (list2, _void) -> {
 				cancelChecker.checkCanceled();
 				for (CompletionItem item : list2.getItems()) {
 					list1.getItems().add(item);

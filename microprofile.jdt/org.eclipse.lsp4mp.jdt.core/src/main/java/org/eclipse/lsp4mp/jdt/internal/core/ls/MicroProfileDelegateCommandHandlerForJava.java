@@ -39,6 +39,8 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextDocumentIdentifier;
 import org.eclipse.lsp4mp.commons.CodeActionResolveData;
 import org.eclipse.lsp4mp.commons.DocumentFormat;
+import org.eclipse.lsp4mp.commons.JavaCursorContextKind;
+import org.eclipse.lsp4mp.commons.JavaCursorContextResult;
 import org.eclipse.lsp4mp.commons.JavaFileInfo;
 import org.eclipse.lsp4mp.commons.MicroProfileDefinition;
 import org.eclipse.lsp4mp.commons.MicroProfileJavaCodeActionParams;
@@ -68,6 +70,7 @@ public class MicroProfileDelegateCommandHandlerForJava extends AbstractMicroProf
 	private static final String JAVA_DEFINITION_COMMAND_ID = "microprofile/java/definition";
 	private static final String JAVA_DIAGNOSTICS_COMMAND_ID = "microprofile/java/diagnostics";
 	private static final String JAVA_HOVER_COMMAND_ID = "microprofile/java/hover";
+	private static final String JAVA_CURSOR_CONTEXT_COMMAND_ID = "microprofile/java/javaCursorContext";
 
 	public MicroProfileDelegateCommandHandlerForJava() {
 	}
@@ -91,6 +94,8 @@ public class MicroProfileDelegateCommandHandlerForJava extends AbstractMicroProf
 				return getDiagnosticsForJava(arguments, commandId, progress);
 			case JAVA_HOVER_COMMAND_ID:
 				return getHoverForJava(arguments, commandId, progress);
+			case JAVA_CURSOR_CONTEXT_COMMAND_ID:
+				return getCursorContextForJava(arguments, commandId, progress);
 			default:
 				throw new UnsupportedOperationException(String.format("Unsupported command '%s'!", commandId));
 		}
@@ -376,7 +381,6 @@ public class MicroProfileDelegateCommandHandlerForJava extends AbstractMicroProf
 		MicroProfileJavaDiagnosticsParams params = createMicroProfileJavaDiagnosticsParams(arguments, commandId);
 		// Return diagnostics from parameter
 		return PropertiesManagerForJava.getInstance().diagnostics(params, JDTUtilsLSImpl.getInstance(), monitor);
-
 	}
 
 	/**
@@ -458,5 +462,12 @@ public class MicroProfileDelegateCommandHandlerForJava extends AbstractMicroProf
 		}
 		boolean surroundEqualsWithSpaces = ((Boolean) obj.get("surroundEqualsWithSpaces")).booleanValue();
 		return new MicroProfileJavaHoverParams(javaFileUri, hoverPosition, documentFormat, surroundEqualsWithSpaces);
+	}
+
+	private static JavaCursorContextResult getCursorContextForJava(List<Object> arguments, String commandId,
+			IProgressMonitor monitor) throws JavaModelException {
+		MicroProfileJavaCompletionParams params = createMicroProfileJavaCompletionParams(arguments, commandId);
+		return PropertiesManagerForJava.getInstance().javaCursorContext(params, JDTUtilsLSImpl.getInstance(),
+				monitor);
 	}
 }
