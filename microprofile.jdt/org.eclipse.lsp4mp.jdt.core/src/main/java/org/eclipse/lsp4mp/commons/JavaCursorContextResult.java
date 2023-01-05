@@ -19,13 +19,15 @@ package org.eclipse.lsp4mp.commons;
 public class JavaCursorContextResult {
 
 	private JavaCursorContextKind kind;
+	private int endOfImportOffset;
 
-	public JavaCursorContextResult(JavaCursorContextKind kind) {
+	public JavaCursorContextResult(JavaCursorContextKind kind, int endOfImportOffset) {
 		this.kind = kind;
+		this.endOfImportOffset = endOfImportOffset;
 	}
 
 	public JavaCursorContextResult() {
-		this(null);
+		this(null, 0);
 	}
 
 	/**
@@ -39,6 +41,15 @@ public class JavaCursorContextResult {
 	 */
 	public JavaCursorContextKind getKind() {
 		return kind;
+	}
+
+	/**
+	 * Returns the offset of the end of the imports list.
+	 *
+	 * @return the offset of the end of the imports list
+	 */
+	public int getEndOfImportOffset() {
+		return endOfImportOffset;
 	}
 
 }

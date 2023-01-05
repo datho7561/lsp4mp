@@ -412,8 +412,9 @@ public class PropertiesManagerForJava {
 		CompilationUnit ast = ASTResolving.createQuickFixAST((ICompilationUnit) typeRoot, monitor);
 
 		JavaCursorContextKind kind = getJavaCursorContextKind(params, typeRoot, ast, utils, monitor);
+		int importOffset = getJavaCursorImportOffset(params, typeRoot, ast, utils, monitor);
 
-		return new JavaCursorContextResult(kind);
+		return new JavaCursorContextResult(kind, importOffset);
 	}
 
 	private static JavaCursorContextKind getJavaCursorContextKind(MicroProfileJavaCompletionParams params, ITypeRoot typeRoot,
@@ -481,6 +482,13 @@ public class PropertiesManagerForJava {
 		default:
 			return JavaCursorContextKind.IN_CLASS;
 		}
+	}
+
+	private int getJavaCursorImportOffset(MicroProfileJavaCompletionParams params, ITypeRoot typeRoot, CompilationUnit ast, IJDTUtils utils,
+			IProgressMonitor monitor) throws JavaModelException {
+		GetLastImportDeclarationVisitor visitor = new GetLastImportDeclarationVisitor();
+		ast.accept(visitor);
+		return visitor.getEndOfImports();
 	}
 
 	/**

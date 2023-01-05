@@ -316,7 +316,7 @@ public class JavaTextDocumentSnippetRegistryTest {
 	}
 
 	private static JavaSnippetCompletionContext context(ProjectLabelInfoEntry projectInfo, JavaCursorContextKind javaCursorContext) {
-		return new JavaSnippetCompletionContext(projectInfo, new JavaCursorContextResult(javaCursorContext));
+		return new JavaSnippetCompletionContext(projectInfo, new JavaCursorContextResult(javaCursorContext, 0));
 	}
 
 }
