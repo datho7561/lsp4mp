@@ -17,6 +17,7 @@ import static org.eclipse.jdt.core.Signature.SIG_VOID;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
@@ -46,7 +47,25 @@ public class JDTTypeUtils {
 
 	public static IType findType(IJavaProject project, String name) {
 		try {
-			return project.findType(name, new NullProgressMonitor());
+			IType foundType = project.findType(name);
+			if (foundType != null && foundType.exists()) {
+				return foundType;
+			}
+			List<String> segments = new ArrayList<>();
+			while (foundType == null && name.indexOf(".") >= 0) {
+				segments.add(name.substring(name.indexOf(".") + 1));
+				name = name.substring(0, name.indexOf("."));
+				IType tempType = project.findType(name);
+				for (String seg : segments) {
+					if (tempType == null || !tempType.exists()) {
+						tempType = null;
+						break;
+					}
+					tempType = tempType.getType(seg);
+				}
+				foundType = tempType;
+			}
+			return foundType;
 		} catch (JavaModelException e) {
 			return null;
 		}
