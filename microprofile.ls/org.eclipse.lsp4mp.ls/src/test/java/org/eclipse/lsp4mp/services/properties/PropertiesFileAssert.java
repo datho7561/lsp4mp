@@ -14,12 +14,14 @@ import static org.junit.Assert.assertNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +65,7 @@ import org.eclipse.lsp4mp.commons.MicroProfilePropertyDocumentationParams;
 import org.eclipse.lsp4mp.commons.codeaction.CodeActionData;
 import org.eclipse.lsp4mp.commons.codeaction.MicroProfileCodeActionId;
 import org.eclipse.lsp4mp.commons.metadata.ItemMetadata;
+import org.eclipse.lsp4mp.commons.runtime.MicroProfileProjectRuntime;
 import org.eclipse.lsp4mp.extensions.ExtendedMicroProfileProjectInfo;
 import org.eclipse.lsp4mp.ls.MockMicroProfilePropertyDefinitionProvider;
 import org.eclipse.lsp4mp.ls.api.MicroProfilePropertyDefinitionProvider;
@@ -109,6 +112,7 @@ public class PropertiesFileAssert {
 	private static final CancelChecker NOOP_CHECKER = () -> {
 	};
 
+
 	public static MicroProfileProjectInfo getDefaultMicroProfileProjectInfo() {
 		if (DEFAULT_PROJECT == null) {
 			DEFAULT_PROJECT = load(PropertiesFileAssert.class.getResourceAsStream("all-quarkus-properties.json"));
@@ -116,6 +120,25 @@ public class PropertiesFileAssert {
 		return DEFAULT_PROJECT;
 	}
 
+	public static final MicroProfileProjectRuntime QUARKUS_PROJECT_RUNTIME = new MicroProfileProjectRuntime(
+			Set.of(path("quarkus/commons-logging-jboss-logging-1.0.0.Final.jar"), //
+					path("quarkus/jboss-logging-3.6.1.Final.jar"), //
+					path("quarkus/jboss-logmanager-3.1.2.Final.jar"), //
+					path("quarkus/microprofile-config-api-3.1.jar"), //
+					path("quarkus/smallrye-config-3.14.1.jar"), //
+					path("quarkus/smallrye-config-common-3.14.1.jar"), //
+					path("quarkus/smallrye-config-core-3.14.1.jar"),
+					path(".")));
+
+	private static String path(String path) {
+		return Paths.get("src/test/resources/classpath", path).toFile().getAbsolutePath();
+	}
+	
+	public static ExtendedMicroProfileProjectInfo wrapWithQuarkusProject(MicroProfileProjectInfo info) {
+		return new ExtendedMicroProfileProjectInfo(info, QUARKUS_PROJECT_RUNTIME);
+	}
+
+	
 	public static MicroProfileProjectInfo load(InputStream input) {
 		return new ExtendedMicroProfileProjectInfo(
 				createGson().fromJson(new InputStreamReader(input), ExtendedMicroProfileProjectInfo.class));

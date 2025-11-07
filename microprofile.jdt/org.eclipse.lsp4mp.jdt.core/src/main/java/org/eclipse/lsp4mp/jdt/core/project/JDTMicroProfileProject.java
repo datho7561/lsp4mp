@@ -14,6 +14,8 @@
 package org.eclipse.lsp4mp.jdt.core.project;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,15 +27,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.internal.core.JavaProject;
+import org.eclipse.lsp4mp.commons.runtime.MicroProfileProjectRuntime;
+import org.eclipse.lsp4mp.commons.runtime.converter.ConverterRuntimeSupport;
 import org.eclipse.lsp4mp.commons.utils.ConfigSourcePropertiesProviderUtils;
 import org.eclipse.lsp4mp.commons.utils.IConfigSourcePropertiesProvider;
 import org.eclipse.lsp4mp.commons.utils.PropertyValueExpander;
+import org.eclipse.lsp4mp.jdt.core.MicroProfileCorePlugin;
 import org.eclipse.lsp4mp.jdt.internal.core.ConfigSourceProviderRegistry;
 import org.eclipse.lsp4mp.jdt.internal.core.project.ConfigSourcePropertiesProvider;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.FrameworkUtil;
 
 /**
  * JDT MicroProfile project wraps a Java project {@link IJavaProject} to store
@@ -48,7 +58,8 @@ public class JDTMicroProfileProject {
 
 	private static final Logger LOGGER = Logger.getLogger(JDTMicroProfileProject.class.getName());
 
-	private IJavaProject javaProject;
+	private final IJavaProject javaProject;
+	private MicroProfileProjectRuntime projectRuntime;
 
 	private List<IConfigSource> configSources;
 
@@ -57,6 +68,7 @@ public class JDTMicroProfileProject {
 
 	public JDTMicroProfileProject(IJavaProject javaProject) {
 		this.javaProject = javaProject;
+
 	}
 
 	/**
@@ -303,6 +315,117 @@ public class JDTMicroProfileProject {
 					.layer(new ConfigSourcePropertiesProvider(configSources.get(i)), provider);
 		}
 		return provider;
+	}
+
+	public MicroProfileProjectRuntime getProjectRuntime() {
+		if (projectRuntime == null) {
+			try {
+				Set<String> classpath = resolveClasspathJars(javaProject);
+				projectRuntime = new MicroProfileProjectRuntime(classpath);
+				if (!projectRuntime.getRuntimeSupport(ConverterRuntimeSupport.class).hasConfigProviderResolver()) {
+					// The project classpath doesn't contains an implementation of MicroProfile
+					// ConfigProviderResolver
+					// (ex: openliberty doesn't host MicroProfile implementation in the classpath
+					// project)
+					// fallback to the default SmallRye MicroProfile config provider resolver
+					fallbackToSmallRyeRuntime(projectRuntime, javaProject);
+				}
+			} catch (Exception e) {
+				LOGGER.log(Level.SEVERE, "Error while loading project runtime", e);
+			}
+		}
+		return projectRuntime;
+	}
+
+	private static void fallbackToSmallRyeRuntime(MicroProfileProjectRuntime projectRuntime, IJavaProject javaProject)
+			throws JavaModelException {
+		Bundle bundle = FrameworkUtil.getBundle(MicroProfileCorePlugin.class);
+		Set<String> fallbackClasspath = projectRuntime.getClasspath();
+		fallbackClasspath.add(path("commons-logging-jboss-logging-1.0.0.Final.jar", bundle));
+		fallbackClasspath.add(path("jboss-logging-3.6.1.Final.jar", bundle)); //
+		fallbackClasspath.add(path("jboss-logmanager-3.1.2.Final.jar", bundle)); //
+		fallbackClasspath.add(path("microprofile-config-api-3.1.jar", bundle)); //
+		fallbackClasspath.add(path("smallrye-config-3.14.1.jar", bundle)); //
+		fallbackClasspath.add(path("smallrye-config-common-3.14.1.jar", bundle)); //
+		fallbackClasspath.add(path("smallrye-config-core-3.14.1.jar", bundle)); //
+		projectRuntime.updateClassPath(fallbackClasspath);
+	}
+
+	private static String path(String libFileName, Bundle bundle) {
+		// Locate the file inside the bundle (e.g. runtimes/smallrye/myLib.jar)
+		URL bundleEntry = bundle.getEntry("runtimes/smallrye/" + libFileName);
+		if (bundleEntry == null) {
+			LOGGER.severe("Bundle entry not found: runtimes/smallrye/" + libFileName);
+			return null;
+		}
+
+		try {
+			// Resolve Eclipse/OSGi URLs (e.g. bundleentry:, platform:) to a physical file
+			// URL
+			URL resolved = FileLocator.toFileURL(bundleEntry);
+
+			// FileLocator.toFileURL() may return URLs with unescaped spaces.
+			// Rebuild a clean URI to safely convert it into a File.
+			URI uri = new URI(resolved.getProtocol(), resolved.getPath(), null);
+
+			// Return the absolute filesystem path
+			return new File(uri).getAbsolutePath();
+
+		} catch (Exception e) {
+			// Should never happen, but log in case of unexpected resolution issues
+			LOGGER.log(Level.SEVERE, "Error while resolving default runtime JAR: " + libFileName, e);
+
+			// Fallback: return the raw path from the bundle entry
+			return bundleEntry.getPath();
+		}
+	}
+
+	private static Set<String> resolveClasspathJars(IJavaProject javaProject) throws JavaModelException {
+		Set<String> result = new HashSet<>();
+
+		// We ask JDT for the *resolved* classpath (includes Maven/Gradle dependencies)
+		IClasspathEntry[] entries = ((JavaProject) javaProject).getResolvedClasspath();
+
+		for (IClasspathEntry entry : entries) {
+			switch (entry.getEntryKind()) {
+
+			case IClasspathEntry.CPE_LIBRARY:
+				// Regular JAR dependency or JRE libs
+				addPath(entry.getPath(), result);
+				break;
+
+			case IClasspathEntry.CPE_VARIABLE:
+				// Linked variable (ex: M2_REPO)
+				// IPath resolved = JavaCore.getResolvedVariablePath(entry.getPath());
+				// addPath(resolved, result);
+				break;
+
+			case IClasspathEntry.CPE_SOURCE:
+				// We include compiled output folder (target/classes or bin/)
+				IPath output = entry.getOutputLocation();
+				if (output == null) {
+					output = javaProject.getOutputLocation();
+				}
+				if (output != null) {
+					IProject project = javaProject.getProject();
+					IPath absoluteOutput = project.getWorkspace().getRoot().getFolder(output).getLocation();
+					addPath(absoluteOutput, result);
+				}
+				break;
+
+			default:
+				// ignore project references for now
+				break;
+			}
+		}
+
+		return result;
+	}
+
+	private static void addPath(IPath path, Set<String> result) {
+		if (path != null) {
+			result.add(path.toFile().getAbsolutePath());
+		}
 	}
 
 }
