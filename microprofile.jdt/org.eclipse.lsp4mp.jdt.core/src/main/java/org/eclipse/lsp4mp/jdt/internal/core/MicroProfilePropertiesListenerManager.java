@@ -189,12 +189,33 @@ public class MicroProfilePropertiesListenerManager {
 						mpProject.getProjectRuntime().clearProjectClassCache();
 					}
 					fireAsyncEvent(event);
-				} else if (isConfigSource(file) && isFileContentChanged(delta)) {
-					MicroProfilePropertiesChangeEvent event = new MicroProfilePropertiesChangeEvent();
-					event.setType(MicroProfilePropertiesScope.ONLY_CONFIG_FILES);
-					event.setProjectURIs(new HashSet<String>());
-					event.getProjectURIs().add(JDTMicroProfileUtils.getProjectURI(file.getProject()));
-					fireAsyncEvent(event);
+				} else if (isConfigSource(file)) {
+					// Create, delete, update config source file (ex :
+					// microprofile-config.properties)
+					
+					JDTMicroProfileProject mpProject = JDTMicroProfileProjectManager.getInstance()
+							.getJDTMicroProfileProject(file);
+					
+					boolean generateEvent = false;
+					if (isFileDeleted(delta) || isFileAdded(delta)) {
+						generateEvent = true;
+						// Create, delete config source file (ex : microprofile-config.properties)						
+						if (mpProject != null) {
+							// Evict the properties cache
+							mpProject.evictConfigSourcesCache();
+						}
+					} else if (isFileContentChanged(delta)) {
+						// Update config source file (ex : microprofile-config.properties)
+						generateEvent = mpProject != null ? mpProject.updateConfigSource(file) : true;
+					}
+
+					if (generateEvent) {
+						MicroProfilePropertiesChangeEvent event = new MicroProfilePropertiesChangeEvent();
+						event.setType(MicroProfilePropertiesScope.ONLY_CONFIG_FILES);
+						event.setProjectURIs(new HashSet<String>());
+						event.getProjectURIs().add(JDTMicroProfileUtils.getProjectURI(file.getProject()));
+						fireAsyncEvent(event);
+					}
 				}
 			}
 			return false;
@@ -275,6 +296,14 @@ public class MicroProfilePropertiesListenerManager {
 
 		private boolean isConfigSource(IFile file) {
 			return JDTMicroProfileProjectManager.getInstance().isConfigSource(file);
+		}
+
+		private boolean isFileDeleted(IResourceDelta delta) {
+			return delta.getKind() == IResourceDelta.REMOVED;
+		}
+
+		private boolean isFileAdded(IResourceDelta delta) {
+			return delta.getKind() == IResourceDelta.ADDED;
 		}
 
 		private boolean isFileContentChanged(IResourceDelta delta) {

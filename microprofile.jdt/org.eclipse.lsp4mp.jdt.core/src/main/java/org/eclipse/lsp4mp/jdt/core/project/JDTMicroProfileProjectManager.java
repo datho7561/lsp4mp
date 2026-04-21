@@ -23,10 +23,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceChangeEvent;
 import org.eclipse.core.resources.IResourceChangeListener;
-import org.eclipse.core.resources.IResourceDelta;
-import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -52,7 +49,10 @@ public class JDTMicroProfileProjectManager {
 	private final Map<IJavaProject, JDTMicroProfileProject> projects;
 	private MicroProfileProjectListener microprofileProjectListener;
 
-	private class MicroProfileProjectListener implements IResourceChangeListener, IResourceDeltaVisitor {
+	/**
+	 * Resource Listener to update MicroProfile projects cache.
+	 */
+	private class MicroProfileProjectListener implements IResourceChangeListener {
 
 		@Override
 		public void resourceChanged(IResourceChangeEvent event) {
@@ -81,18 +81,6 @@ public class JDTMicroProfileProjectManager {
 				}
 				break;
 			}
-			case IResourceChangeEvent.POST_CHANGE:
-				IResourceDelta resourceDelta = event.getDelta();
-				if (resourceDelta != null) {
-					try {
-						resourceDelta.accept(this);
-					} catch (CoreException e) {
-						if (LOGGER.isLoggable(Level.SEVERE)) {
-							LOGGER.log(Level.SEVERE, "Error while tracking MicroProfile properties file", e);
-						}
-					}
-				}
-				break;
 			}
 		}
 
@@ -102,44 +90,6 @@ public class JDTMicroProfileProjectManager {
 				// Remove the JDTMicroProfile project instance from the cache.
 				projects.remove(javaProject);
 			}
-		}
-
-		@Override
-		public boolean visit(IResourceDelta delta) throws CoreException {
-			IResource resource = delta.getResource();
-			if (resource == null) {
-				return false;
-			}
-			switch (resource.getType()) {
-			case IResource.ROOT:
-			case IResource.PROJECT:
-			case IResource.FOLDER:
-				return resource.isAccessible();
-			case IResource.FILE:
-				IFile file = (IFile) resource;
-				if ((isFileDeleted(delta) || isFileContentChanged(delta) || isFileAdded(delta))
-						&& isConfigSource(file)) {
-					// it's a config source file (ex : microprofile-config.properties)
-					JDTMicroProfileProject mpProject = getJDTMicroProfileProject(file);
-					if (mpProject != null) {
-						// Evict the properties cache
-						mpProject.evictConfigSourcesCache();
-					}
-				}
-			}
-			return false;
-		}
-
-		private boolean isFileDeleted(IResourceDelta delta) {
-			return delta.getKind() == IResourceDelta.REMOVED;
-		}
-
-		private boolean isFileAdded(IResourceDelta delta) {
-			return delta.getKind() == IResourceDelta.ADDED;
-		}
-
-		private boolean isFileContentChanged(IResourceDelta delta) {
-			return (delta.getKind() == IResourceDelta.CHANGED && (delta.getFlags() & IResourceDelta.CONTENT) != 0);
 		}
 
 	}

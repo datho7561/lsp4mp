@@ -25,6 +25,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -218,6 +219,29 @@ public class JDTMicroProfileProject {
 		configSources = null;
 		propertyValueExpander = null;
 		aggregatedPropertiesProvider = null;
+	}
+
+	/**
+	 * Try updating the given config source file
+	 * 
+	 * @param file
+	 * @return true if the config source file has been updated (ex:
+	 *         src/main/resources/microprofile-config.properties) and false
+	 *         otherwise (ex: target/classes/microprofile-config.properties)
+	 */
+	public boolean updateConfigSource(IFile file) {
+		if (configSources != null) {
+			for (IConfigSource configSource : configSources) {
+				// If file comes from target folder, the file will not be updated.
+				if (configSource.getSourceConfigFileURI().endsWith(file.getLocation().toString())) {
+					configSource.reset();
+					propertyValueExpander = null;
+					aggregatedPropertiesProvider = null;
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**

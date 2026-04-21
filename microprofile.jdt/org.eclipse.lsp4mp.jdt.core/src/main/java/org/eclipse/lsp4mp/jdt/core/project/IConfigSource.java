@@ -100,4 +100,5 @@ public interface IConfigSource {
 	 */
 	Set<String> getAllKeys();
 
+	void reset();
 }

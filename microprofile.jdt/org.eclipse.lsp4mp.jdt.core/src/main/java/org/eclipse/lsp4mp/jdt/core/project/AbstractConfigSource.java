@@ -218,7 +218,8 @@ public abstract class AbstractConfigSource<T> implements IConfigSource {
 		return null;
 	}
 
-	private void reset() {
+	@Override
+	public void reset() {
 		config = null;
 		propertyInformations = null;
 	}
